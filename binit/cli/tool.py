@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import click
 from ghapi.all import GhApi
 from rich.console import Console
 from rich.table import Table
 
-from binit.core.config import load_config
+from binit.core.config import load_config, write_config
+from binit.core.constants import DEFAULT_BASE_DIR
 from binit.installer import Installer
 from binit.utils import parse_github_repo
 
@@ -98,3 +101,27 @@ def update(name: str, update_all: bool):
         _update_tool(name, tools[name])
     except ValueError as e:
         raise click.ClickException(str(e))
+
+
+@tool.command(name='uninstall')
+@click.option('--name', '-n', required=True, help='Name of the installed tool to uninstall')
+def uninstall(name: str):
+    '''Uninstall an installed tool and remove its binary'''
+    try:
+        cfg = load_config()
+    except FileNotFoundError as e:
+        raise click.ClickException(str(e))
+
+    tools = cfg.get('installed_tools', {})
+    if name not in tools:
+        raise click.ClickException(f'Tool "{name}" is not installed.')
+
+    binary = tools[name].get('binary')
+    if binary:
+        binary_path = Path(binary)
+        if binary_path.exists():
+            binary_path.unlink()
+
+    del tools[name]
+    write_config(cfg, DEFAULT_BASE_DIR / 'config.yaml')
+    click.echo(f'Uninstalled {name}.')
