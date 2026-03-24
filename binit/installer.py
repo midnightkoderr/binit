@@ -52,6 +52,12 @@ class Installer:
             raise ValueError(f'No matching asset found for {os_name}/{arch}')
 
         logger.info(f'Matched asset: {asset.name}')
+        if self.repo.lower() not in asset.name.lower():
+            if not click.confirm(
+                f'Asset "{asset.name}" doesn\'t match repo name "{self.repo}". Install anyway?',
+                default=False,
+            ):
+                raise click.Abort()
         asset_dir = downloads_dir / self.repo
         download_path = self._download(asset.browser_download_url, asset_dir, asset.name)
         extract(download_path)

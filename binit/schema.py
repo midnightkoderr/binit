@@ -1,4 +1,4 @@
-from marshmallow import INCLUDE, Schema, fields, post_load, validate
+from marshmallow import INCLUDE, Schema, fields, post_dump, post_load, validate
 
 from binit.core.constants import ARCH_ALIASES, SUPPORTED_PLATFORMS
 from binit.models import ConfigModel, ToolModel
@@ -22,6 +22,12 @@ class ToolSchema(Schema):
     class Meta:
         unknown = INCLUDE
 
+
+    @post_dump
+    def drop_none_rename(self, data, **kwargs):
+        if data.get('rename_to') is None:
+            data.pop('rename_to', None)
+        return data
 
     @post_load
     def make(self, data, **kwargs):
