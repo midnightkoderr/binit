@@ -23,5 +23,4 @@ class ConfigModel:
     os: str
     arch: str
     init_at: str
-    base_dir: Path
     installed_tools: dict[str, ToolModel]

@@ -1,0 +1,62 @@
+import platform
+import shutil
+from datetime import datetime, timezone
+from pathlib import Path
+
+from binit.core.config import write_config
+from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR, VERSION
+from binit.logger import get_logger
+from binit.utils import os_arch_detect
+
+logger = get_logger(__name__)
+
+
+class Initialiser:
+    '''Initialises binit directory structure with bin, logs, and downloads subdirectories'''
+
+    def __init__(self, base_dir: Path = DEFAULT_BASE_DIR, reinit: bool = False):
+        self.base_dir = base_dir
+        self.reinit = reinit
+        self.config_dir = DEFAULT_BASE_DIR
+        self.config_file = DEFAULT_BASE_DIR / 'config.yaml'
+        self.bin_dir = base_dir / 'bin'
+        self.log_dir = base_dir / 'logs'
+        self.downloads_dir = base_dir / 'downloads'
+
+    def run(self):
+        if self.reinit and self.base_dir.exists():
+            logger.info(f'Reinitialising: deleting {self.base_dir} recursively')
+            shutil.rmtree(self.base_dir)
+        self.create_dirs()
+        self._write_config()
+
+    def create_dirs(self):
+        for d in [self.config_dir, self.base_dir, self.bin_dir, self.log_dir, self.downloads_dir]:
+            if not d.exists():
+                d.mkdir(parents=True, exist_ok=True)
+                logger.info(f'Created dir: {d}')
+            else:
+                logger.info(f'Dir already exists: {d}')
+
+    def _write_config(self):
+        if self.config_file.exists() and not self.reinit:
+            logger.info(f'Config already exists: {self.config_file}')
+            return
+
+        os_name, arch = os_arch_detect(
+            platform.system().lower(),
+            platform.machine().lower(),
+            ARCH_ALIASES
+        )
+
+        config = {
+            'binit_version': VERSION,
+            'os': os_name,
+            'arch': arch,
+            'init_at': datetime.now(timezone.utc).astimezone().isoformat(),
+            'base_dir': str(self.base_dir),
+            'installed_tools': {}
+        }
+
+        write_config(config, self.config_file)
+        logger.info(f'Config written: {self.config_file}')

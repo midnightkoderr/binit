@@ -32,7 +32,6 @@ class ConfigSchema(Schema):
     os = fields.Str(required=True, validate=validate.OneOf(SUPPORTED_PLATFORMS))
     arch = fields.Str(required=True, validate=validate.OneOf(ARCH_ALIASES.keys()))
     init_at = fields.DateTime(required=True)
-    base_dir = fields.Str(required=True)
     installed_tools = fields.Dict(keys=fields.Str(), values=fields.Nested(ToolSchema), required=True)
 
 
