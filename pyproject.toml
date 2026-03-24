@@ -1,0 +1,13 @@
+[project]
+name = "binit"
+version = "0.1.0"
+description = "A minimal github release binary installer and manager"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.0.2",
+]
