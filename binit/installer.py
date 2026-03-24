@@ -81,24 +81,34 @@ class Installer:
 
         return tool_model
 
-    _PREFERRED_EXTENSIONS = ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.zip')
+    _ARCHIVE_EXTENSIONS = ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.zip')
+    _CHECKSUM_EXTENSIONS = ('.sha256', '.sha512', '.md5', '.sha1', '.sig', '.asc', '.pem', '.sbom', '.txt')
+    _MIN_SCORE = 6
 
+    def _score_asset(self, asset, os_name: str, arch_aliases: set) -> int:
+        name = asset.name.lower()
+        score = 0
+        if os_name in name:
+            score += 4
+        if any(alias in name for alias in arch_aliases):
+            score += 3
+        if any(name.endswith(ext) for ext in self._ARCHIVE_EXTENSIONS):
+            score += 2
+        if not Path(asset.name).suffix:
+            score += 1
+        if any(name.endswith(ext) for ext in self._CHECKSUM_EXTENSIONS):
+            score -= 10
+        return score
 
     def _match_asset(self, assets, os_name: str, arch_aliases: set) -> object | None:
-        candidates = [
-            asset for asset in assets
-            if os_name in asset.name.lower()
-            and any(alias in asset.name.lower() for alias in arch_aliases)
+        scored = [
+            (asset, self._score_asset(asset, os_name, arch_aliases))
+            for asset in assets
         ]
-        for ext in self._PREFERRED_EXTENSIONS:
-            for asset in candidates:
-                if asset.name.lower().endswith(ext):
-                    return asset
-        # fall back to raw binaries (no file extension at all)
-        for asset in candidates:
-            if not Path(asset.name).suffix:
-                return asset
-        return None
+        candidates = [(asset, score) for asset, score in scored if score >= self._MIN_SCORE]
+        if not candidates:
+            return None
+        return max(candidates, key=lambda x: x[1])[0]
 
     def _download(self, url: str, downloads_dir: Path, filename: str) -> Path:
         downloads_dir.mkdir(parents=True, exist_ok=True)
