@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-binit = "binit.cli:cli"
+binit = "binit:main"
 
 [build-system]
 requires = ["hatchling"]
