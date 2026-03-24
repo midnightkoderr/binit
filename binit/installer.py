@@ -67,7 +67,7 @@ class Installer:
         original_name = executable.name
         if self._rename_to is not None:
             rename_to = self._rename_to
-        elif '-' in original_name or '_' in original_name:
+        elif original_name != self.repo and ('-' in original_name or '_' in original_name):
             rename_to = click.prompt(
                 f'Rename binary "{original_name}"? (leave blank to keep as-is)',
                 default='',
