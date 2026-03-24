@@ -10,11 +10,8 @@ from binit.utils import ConfigManager, make_yaml_handler
 
 def make_initialiser(tmp_path, reinit=False):
     base = tmp_path / 'binit'
-    with patch('binit.initialiser.DEFAULT_BASE_DIR', base):
-        initialiser = Initialiser(base_dir=base, reinit=reinit)
-        initialiser.config_dir = base
-        initialiser.config_file = base / 'config.yaml'
-        return initialiser, base
+    initialiser = Initialiser(base_dir=base, reinit=reinit)
+    return initialiser, base
 
 
 class TestInitialiser:
