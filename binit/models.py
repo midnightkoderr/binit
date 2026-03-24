@@ -17,6 +17,7 @@ class ToolModel:
     description: Optional[str]
     license: Optional[str]
     binary: Path
+    rename_to: Optional[str] = None
 
 
 @dataclass

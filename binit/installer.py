@@ -21,9 +21,10 @@ logger = get_logger(__name__)
 class Installer:
     '''Downloads and registers a binary from a GitHub release'''
 
-    def __init__(self, github_repo: str):
+    def __init__(self, github_repo: str, rename_to: str | None = None):
         self.owner, self.repo = parse_github_repo(github_repo)
         self.api = GhApi()
+        self._rename_to = rename_to
 
     def run(self) -> ToolModel:
         config = load_config()
@@ -49,8 +50,21 @@ class Installer:
         executable = find_executable(asset_dir)
         if not executable:
             raise ValueError(f'No executable found in extracted files for {self.repo}')
+        original_name = executable.name
+        if self._rename_to is not None:
+            rename_to = self._rename_to
+        elif '-' in original_name or '_' in original_name:
+            rename_to = click.prompt(
+                f'Rename binary "{original_name}"? (leave blank to keep as-is)',
+                default='',
+                show_default=False,
+            ).strip() or None
+        else:
+            rename_to = None
+
         bin_dir.mkdir(parents=True, exist_ok=True)
-        binary_path = bin_dir / executable.name
+        final_name = rename_to if rename_to else original_name
+        binary_path = bin_dir / final_name
         shutil.move(executable, binary_path)
         binary_path.chmod(0o755)
         logger.info(f'Moved binary to {binary_path}')
@@ -71,7 +85,8 @@ class Installer:
             updated_at=updated_at,
             description=repo_info.get('description'),
             license=license_name,
-            binary=binary_path
+            binary=binary_path,
+            rename_to=rename_to,
         )
 
         tool_dict = ToolSchema().dump(tool_model)

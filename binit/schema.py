@@ -16,6 +16,7 @@ class ToolSchema(Schema):
     description = fields.Str(allow_none=True)
     license = fields.Str(allow_none=True)
     binary = fields.Str(required=True)
+    rename_to = fields.Str(load_default=None, allow_none=True)
 
 
     class Meta:
