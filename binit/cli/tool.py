@@ -49,20 +49,7 @@ def install(github_repo: str):
         raise click.BadParameter(str(e), param_hint='--github-repo')
 
 
-@tool.command(name='update')
-@click.option('--name', '-n', required=True, help='Name of the installed tool to update')
-def update(name: str):
-    '''Check for and apply updates to an installed tool'''
-    try:
-        cfg = load_config()
-    except FileNotFoundError as e:
-        raise click.ClickException(str(e))
-
-    tools = cfg.get('installed_tools', {})
-    if name not in tools:
-        raise click.ClickException(f'Tool "{name}" is not installed.')
-
-    tool_cfg = tools[name]
+def _update_tool(name: str, tool_cfg: dict):
     installed_release = tool_cfg.get('release')
     repo_url = tool_cfg.get('repo')
 
@@ -75,7 +62,39 @@ def update(name: str):
         return
 
     click.echo(f'Updating {name}: {installed_release} → {latest_release}')
+    Installer(repo_url).run()
+
+
+@tool.command(name='update')
+@click.option('--name', '-n', default=None, help='Name of the installed tool to update')
+@click.option('--all', '-a', 'update_all', is_flag=True, default=False, help='Update all installed tools')
+def update(name: str, update_all: bool):
+    '''Check for and apply updates to an installed tool'''
+    if not name and not update_all:
+        raise click.UsageError('Provide --name or --all.')
+
     try:
-        Installer(repo_url).run()
+        cfg = load_config()
+    except FileNotFoundError as e:
+        raise click.ClickException(str(e))
+
+    tools = cfg.get('installed_tools', {})
+
+    if update_all:
+        if not tools:
+            click.echo('No tools installed.')
+            return
+        for tool_name, tool_cfg in tools.items():
+            try:
+                _update_tool(tool_name, tool_cfg)
+            except ValueError as e:
+                raise click.ClickException(str(e))
+        return
+
+    if name not in tools:
+        raise click.ClickException(f'Tool "{name}" is not installed.')
+
+    try:
+        _update_tool(name, tools[name])
     except ValueError as e:
         raise click.ClickException(str(e))
