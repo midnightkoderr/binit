@@ -1,6 +1,6 @@
 import click
 
-from binit.cli import config, init
+from binit.cli import config, init, install
 from binit.core.constants import VERSION
 
 
@@ -15,3 +15,4 @@ def cli(ctx: click.Context):
 
 cli.add_command(init.init)
 cli.add_command(config.config)
+cli.add_command(install.install)

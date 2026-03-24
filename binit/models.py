@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
 @dataclass
@@ -9,11 +11,11 @@ class ToolModel:
     asset: str
     release: str
     version: str
-    homepage: str
-    installed_at: str
-    updated_at: str
-    description: str
-    license: str
+    homepage: Optional[str]
+    installed_at: Optional[datetime]
+    updated_at: datetime
+    description: Optional[str]
+    license: Optional[str]
     binary: Path
 
 

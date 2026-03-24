@@ -1,0 +1,91 @@
+from datetime import datetime, timezone
+from pathlib import Path
+
+import click
+import httpx
+from ghapi.all import GhApi
+
+from binit.core.config import load_config, write_config
+from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR
+from binit.logger import get_logger
+from binit.models import ToolModel
+from binit.schema import ToolSchema
+from binit.utils import parse_github_repo
+
+logger = get_logger(__name__)
+
+
+class Installer:
+    '''Downloads and registers a binary from a GitHub release'''
+
+    def __init__(self, github_repo: str):
+        self.owner, self.repo = parse_github_repo(github_repo)
+        self.api = GhApi()
+
+    def run(self) -> ToolModel:
+        config = load_config()
+
+        os_name = config['os']
+        arch = config['arch']
+        arch_aliases = ARCH_ALIASES.get(arch, {arch})
+        downloads_dir = Path(config['base_dir']) / 'downloads'
+
+        logger.info(f'Fetching latest release for {self.owner}/{self.repo}')
+        release = self.api.repos.get_latest_release(owner=self.owner, repo=self.repo)
+        repo_info = self.api.repos.get(owner=self.owner, repo=self.repo)
+
+        asset = self._match_asset(release.assets, os_name, arch_aliases)
+        if not asset:
+            raise ValueError(f'No matching asset found for {os_name}/{arch}')
+
+        logger.info(f'Matched asset: {asset.name}')
+        download_path = self._download(asset.browser_download_url, downloads_dir / self.repo, asset.name)
+
+        version = release.tag_name.lstrip('v')
+        license_name = repo_info.license.name if repo_info.get('license') else None
+
+        updated_at = datetime.fromisoformat(release.published_at.replace('Z', '+00:00'))
+
+        tool_model = ToolModel(
+            name=self.repo,
+            repo=f'https://github.com/{self.owner}/{self.repo}',
+            asset=asset.name,
+            release=release.tag_name,
+            version=version,
+            homepage=repo_info.get('homepage') or f'https://github.com/{self.owner}/{self.repo}',
+            installed_at=datetime.now(timezone.utc).astimezone(),
+            updated_at=updated_at,
+            description=repo_info.get('description'),
+            license=license_name,
+            binary=download_path
+        )
+
+        tool_dict = ToolSchema().dump(tool_model)
+        config.setdefault('installed_tools', {})[self.repo] = tool_dict
+        write_config(config, DEFAULT_BASE_DIR / 'config.yaml')
+        logger.info(f'Installed {self.repo} {version}')
+
+        return tool_model
+
+    def _match_asset(self, assets, os_name: str, arch_aliases: set) -> object | None:
+        matched = [
+            asset for asset in assets
+            if os_name in asset.name.lower()
+            and any(alias in asset.name.lower() for alias in arch_aliases)
+        ]
+        return matched[0] if matched else None
+
+    def _download(self, url: str, downloads_dir: Path, filename: str) -> Path:
+        downloads_dir.mkdir(parents=True, exist_ok=True)
+        dest = downloads_dir / filename
+        if dest.exists():
+            if not click.confirm(f'{filename} already exists. Re-download?', default=False):
+                logger.info(f'Skipped download, using existing file: {dest}')
+                return dest
+        with httpx.stream('GET', url, follow_redirects=True) as response:
+            response.raise_for_status()
+            with dest.open('wb') as f:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
+        logger.info(f'Downloaded to {dest}')
+        return dest
