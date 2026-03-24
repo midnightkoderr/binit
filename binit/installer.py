@@ -81,13 +81,19 @@ class Installer:
 
         return tool_model
 
+    _PREFERRED_EXTENSIONS = ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.zip')
+
     def _match_asset(self, assets, os_name: str, arch_aliases: set) -> object | None:
-        matched = [
+        candidates = [
             asset for asset in assets
             if os_name in asset.name.lower()
             and any(alias in asset.name.lower() for alias in arch_aliases)
         ]
-        return matched[0] if matched else None
+        for ext in self._PREFERRED_EXTENSIONS:
+            for asset in candidates:
+                if asset.name.lower().endswith(ext):
+                    return asset
+        return None
 
     def _download(self, url: str, downloads_dir: Path, filename: str) -> Path:
         downloads_dir.mkdir(parents=True, exist_ok=True)

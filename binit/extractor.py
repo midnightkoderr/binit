@@ -28,7 +28,9 @@ def extract(archive: Path, _depth: int = 0, _max_depth: int = 3) -> Path:
         return archive
 
     for nested in extracted.iterdir():
-        if nested.is_file() and identify_filetype(nested) != FileKind.UNKNOWN:
+        if nested == archive:
+            continue
+        if nested.is_file() and identify_filetype(nested) in (FileKind.TAR, FileKind.ZIP):
             extract(nested, _depth=_depth + 1, _max_depth=_max_depth)
 
     return extracted

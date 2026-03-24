@@ -3,6 +3,8 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+import click
+
 from binit.core.config import write_config
 from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR, VERSION
 from binit.logger import get_logger
@@ -29,6 +31,19 @@ class Initialiser:
             shutil.rmtree(self.base_dir)
         self.create_dirs()
         self._write_config()
+        self._print_path_hint()
+
+    def _print_path_hint(self):
+        bin_dir = self.bin_dir
+        click.echo('')
+        click.echo(click.style('  binit initialised successfully!', fg='green', bold=True))
+        click.echo('')
+        click.echo('  Add the bin directory to your PATH:')
+        click.echo('')
+        click.echo(click.style(f'    export PATH="{bin_dir}:$PATH"', fg='cyan'))
+        click.echo('')
+        click.echo('  To persist it, add the line above to your shell config (~/.bashrc, ~/.zshrc, etc.)')
+        click.echo('')
 
     def create_dirs(self):
         for d in [self.config_dir, self.base_dir, self.bin_dir, self.log_dir, self.downloads_dir]:

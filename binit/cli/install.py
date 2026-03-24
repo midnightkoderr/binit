@@ -9,6 +9,5 @@ def install(github_repo: str):
     '''Install a binary from the latest GitHub release'''
     try:
         tool = Installer(github_repo).run()
-        click.echo(f'Installed {tool.name} {tool.version} → {tool.binary}')
     except ValueError as e:
         raise click.BadParameter(str(e), param_hint='--github-repo')
