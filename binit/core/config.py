@@ -9,7 +9,10 @@ def load_config() -> dict:
     config_file = DEFAULT_BASE_DIR / 'config.yaml'
     if not config_file.exists():
         raise FileNotFoundError('Config not found. Run `binit init` first.')
-    return ConfigManager(make_yaml_handler()).load_config(config_file)
+    config = ConfigManager(make_yaml_handler()).load_config(config_file)
+    if not isinstance(config.get('installed_tools'), dict):
+        config['installed_tools'] = {}
+    return config
 
 
 def write_config(data: Any, path: Path) -> None:
