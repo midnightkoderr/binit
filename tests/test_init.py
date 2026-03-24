@@ -1,83 +1,96 @@
+from unittest.mock import patch
+
 from click.testing import CliRunner
 
-from binit.cli.init import Initialiser, init
+from binit.cli.init import init
 from binit.core.constants import VERSION
+from binit.initialiser import Initialiser
+from binit.utils import ConfigManager, make_yaml_handler
+
+
+def make_initialiser(tmp_path, reinit=False):
+    base = tmp_path / 'binit'
+    with patch('binit.initialiser.DEFAULT_BASE_DIR', base):
+        initialiser = Initialiser(base_dir=base, reinit=reinit)
+        initialiser.config_dir = base
+        initialiser.config_file = base / 'config.yaml'
+        return initialiser, base
 
 
 class TestInitialiser:
     def test_creates_expected_dirs(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         assert base.is_dir()
         assert (base / 'bin').is_dir()
         assert (base / 'downloads').is_dir()
         assert (base / 'logs').is_dir()
 
     def test_creates_config_file(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         assert (base / 'config.yaml').is_file()
 
     def test_config_fields(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
-        from binit.utils import make_yaml_handler, ConfigManager
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         config = ConfigManager(make_yaml_handler()).load_config(base / 'config.yaml')
         assert config['binit_version'] == VERSION
         assert config['os'] in {'linux', 'darwin', 'windows'}
         assert 'arch' in config
         assert 'init_at' in config
         assert config['base_dir'] == str(base)
-        assert config['installed_tools'] == []
+        assert config['installed_tools'] == {}
 
     def test_skips_config_if_exists(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         config_file = base / 'config.yaml'
         original_mtime = config_file.stat().st_mtime
-        Initialiser(base_dir=base).run()
+        make_initialiser(tmp_path)[0].run()
         assert config_file.stat().st_mtime == original_mtime
 
     def test_reinit_deletes_and_recreates(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         sentinel = base / 'sentinel.txt'
         sentinel.write_text('should be gone')
-        Initialiser(base_dir=base, reinit=True).run()
+        make_initialiser(tmp_path, reinit=True)[0].run()
         assert not sentinel.exists()
         assert base.is_dir()
         assert (base / 'config.yaml').is_file()
 
     def test_reinit_overwrites_config(self, tmp_path):
-        base = tmp_path / 'binit'
-        Initialiser(base_dir=base).run()
+        initialiser, base = make_initialiser(tmp_path)
+        initialiser.run()
         config_file = base / 'config.yaml'
         original_inode = config_file.stat().st_ino
-        Initialiser(base_dir=base, reinit=True).run()
+        make_initialiser(tmp_path, reinit=True)[0].run()
         assert config_file.stat().st_ino != original_inode
 
     def test_skips_existing_dirs_without_reinit(self, tmp_path):
-        base = tmp_path / 'binit'
+        initialiser, base = make_initialiser(tmp_path)
         base.mkdir()
         (base / 'bin').mkdir()
-        Initialiser(base_dir=base).run()
+        initialiser.run()
         assert (base / 'bin').is_dir()
 
 
 class TestInitCommand:
-    def test_init_creates_base_dir(self, tmp_path):
-        runner = CliRunner()
+    def test_init_runs_successfully(self, tmp_path):
         base = tmp_path / 'binit'
-        result = runner.invoke(init, ['--base-dir', str(base)])
+        runner = CliRunner()
+        with patch('binit.initialiser.DEFAULT_BASE_DIR', base), \
+             patch('binit.cli.init.Initialiser') as mock:
+            mock.return_value.run.return_value = None
+            result = runner.invoke(init)
         assert result.exit_code == 0
-        assert base.is_dir()
+        mock.assert_called_once_with(reinit=False)
 
-    def test_reinit_flag(self, tmp_path):
+    def test_reinit_flag_passed(self, tmp_path):
         runner = CliRunner()
-        base = tmp_path / 'binit'
-        runner.invoke(init, ['--base-dir', str(base)])
-        sentinel = base / 'sentinel.txt'
-        sentinel.write_text('should be gone')
-        result = runner.invoke(init, ['--base-dir', str(base), '--reinit'])
+        with patch('binit.cli.init.Initialiser') as mock:
+            mock.return_value.run.return_value = None
+            result = runner.invoke(init, ['--reinit'])
         assert result.exit_code == 0
-        assert not sentinel.exists()
+        mock.assert_called_once_with(reinit=True)

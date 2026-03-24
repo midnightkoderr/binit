@@ -1,57 +1,45 @@
+import logging
+from datetime import date
 from pathlib import Path
 
-from binit.logger import LoggingConfig
+from binit.logger import get_logger, setup_file_logging
 
 
-class TestLoggingConfig:
-    def setup_method(self, tmp_path=None):
-        self.log_file = Path('/tmp/test_binit.log')
+class TestSetupFileLogging:
+    def test_creates_log_file(self, tmp_path):
+        setup_file_logging(tmp_path)
+        expected = tmp_path / f'binit_{date.today()}.log'
+        assert expected.exists()
 
-    def test_get_config_has_required_keys(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert config['version'] == 1
-        assert 'formatters' in config
-        assert 'handlers' in config
-        assert 'root' in config
+    def test_creates_log_dir_if_missing(self, tmp_path):
+        log_dir = tmp_path / 'logs'
+        setup_file_logging(log_dir)
+        assert log_dir.is_dir()
 
-    def test_get_config_has_stderr_and_file_handlers(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert 'stderr' in config['handlers']
-        assert 'file' in config['handlers']
+    def test_adds_file_handler(self, tmp_path):
+        root = logging.getLogger()
+        before = len(root.handlers)
+        setup_file_logging(tmp_path)
+        after = len(root.handlers)
+        assert after > before
 
-    def test_file_handler_uses_filehandler_by_default(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert config['handlers']['file']['class'] == 'logging.FileHandler'
+    def teardown_method(self):
+        root = logging.getLogger()
+        for h in root.handlers[:]:
+            if isinstance(h, logging.FileHandler):
+                h.close()
+                root.removeHandler(h)
 
-    def test_file_handler_uses_rotating_when_rotate_true(self):
-        config = LoggingConfig(self.log_file, rotate=True).get_config()
-        assert config['handlers']['file']['class'] == 'logging.handlers.TimedRotatingFileHandler'
-        assert 'when' in config['handlers']['file']
-        assert 'backupCount' in config['handlers']['file']
 
-    def test_file_handler_path(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert config['handlers']['file']['filename'] == str(self.log_file)
+class TestGetLogger:
+    def test_returns_logger(self):
+        logger = get_logger('binit.test')
+        assert isinstance(logger, logging.Logger)
 
-    def test_log_level_applied_to_stderr(self):
-        config = LoggingConfig(self.log_file, log_level='WARNING').get_config()
-        assert config['handlers']['stderr']['level'] == 'WARNING'
+    def test_logger_name(self):
+        logger = get_logger('binit.test')
+        assert logger.name == 'binit.test'
 
-    def test_file_level_applied(self):
-        config = LoggingConfig(self.log_file, file_level='ERROR').get_config()
-        assert config['handlers']['file']['level'] == 'ERROR'
-
-    def test_default_formatters_used_when_none_provided(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert 'default' in config['formatters']
-        assert 'format' in config['formatters']['default']
-
-    def test_custom_formatters_override_default(self):
-        custom = {'custom': {'format': '%(message)s'}}
-        config = LoggingConfig(self.log_file, formatters=custom).get_config()
-        assert 'custom' in config['formatters']
-        assert 'default' not in config['formatters']
-
-    def test_root_logger_has_both_handlers(self):
-        config = LoggingConfig(self.log_file).get_config()
-        assert set(config['root']['handlers']) == {'stderr', 'file'}
+    def test_empty_name_returns_root(self):
+        logger = get_logger('')
+        assert logger is logging.getLogger('')
