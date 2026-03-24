@@ -1,12 +1,15 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
+import shutil
+
 import click
 import httpx
 from ghapi.all import GhApi
 
 from binit.core.config import load_config, write_config
 from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR
+from binit.extractor import extract, find_executable
 from binit.logger import get_logger
 from binit.models import ToolModel
 from binit.schema import ToolSchema
@@ -29,6 +32,7 @@ class Installer:
         arch = config['arch']
         arch_aliases = ARCH_ALIASES.get(arch, {arch})
         downloads_dir = Path(config['base_dir']) / 'downloads'
+        bin_dir = Path(config['base_dir']) / 'bin'
 
         logger.info(f'Fetching latest release for {self.owner}/{self.repo}')
         release = self.api.repos.get_latest_release(owner=self.owner, repo=self.repo)
@@ -39,7 +43,17 @@ class Installer:
             raise ValueError(f'No matching asset found for {os_name}/{arch}')
 
         logger.info(f'Matched asset: {asset.name}')
-        download_path = self._download(asset.browser_download_url, downloads_dir / self.repo, asset.name)
+        asset_dir = downloads_dir / self.repo
+        download_path = self._download(asset.browser_download_url, asset_dir, asset.name)
+        extract(download_path)
+        executable = find_executable(asset_dir)
+        if not executable:
+            raise ValueError(f'No executable found in extracted files for {self.repo}')
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        binary_path = bin_dir / executable.name
+        shutil.move(executable, binary_path)
+        binary_path.chmod(0o755)
+        logger.info(f'Moved binary to {binary_path}')
 
         version = release.tag_name.lstrip('v')
         license_name = repo_info.license.name if repo_info.get('license') else None
@@ -57,13 +71,13 @@ class Installer:
             updated_at=updated_at,
             description=repo_info.get('description'),
             license=license_name,
-            binary=download_path
+            binary=binary_path
         )
 
         tool_dict = ToolSchema().dump(tool_model)
         config.setdefault('installed_tools', {})[self.repo] = tool_dict
         write_config(config, DEFAULT_BASE_DIR / 'config.yaml')
-        logger.info(f'Installed {self.repo} {version}')
+        logger.info(f'Installed {self.repo} v{version} → {binary_path}')
 
         return tool_model
 

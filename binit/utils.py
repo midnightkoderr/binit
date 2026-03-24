@@ -1,11 +1,47 @@
+from enum import Enum, auto
 from pathlib import Path
 from typing import IO, Any, Optional
 from urllib.parse import urlparse
 
+import filetype
 from ruamel.yaml import YAML
 
 from binit.core.exceptions import YamlError
 from binit.core.protocols import YamlProtocol
+
+
+class FileKind(Enum):
+    TAR = auto()
+    ZIP = auto()
+    BINARY = auto()
+    UNKNOWN = auto()
+
+
+_TAR_MIMES = {
+    'application/gzip',
+    'application/x-bzip2',
+    'application/x-xz',
+    'application/x-tar'
+}
+
+_BINARY_MIMES = {
+    'application/x-executable',   # ELF (Linux)
+    'application/x-mach-binary',  # Mach-O (macOS)
+    'application/x-msdownload',   # PE (.exe, Windows)
+}
+
+
+def identify_filetype(path: Path) -> FileKind:
+    kind = filetype.guess(str(path))
+    if kind is None:
+        return FileKind.UNKNOWN
+    if kind.mime in _TAR_MIMES:
+        return FileKind.TAR
+    if kind.mime == 'application/zip':
+        return FileKind.ZIP
+    if kind.mime in _BINARY_MIMES:
+        return FileKind.BINARY
+    return FileKind.UNKNOWN
 
 
 def make_yaml_handler() -> 'YamlHandler':
