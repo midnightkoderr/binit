@@ -19,8 +19,8 @@ class Initialiser:
     def __init__(self, base_dir: Path = DEFAULT_BASE_DIR, reinit: bool = False):
         self.base_dir = base_dir
         self.reinit = reinit
-        self.config_dir = DEFAULT_BASE_DIR
-        self.config_file = DEFAULT_BASE_DIR / 'config.yaml'
+        self.config_dir = base_dir
+        self.config_file = base_dir / 'config.yaml'
         self.bin_dir = base_dir / 'bin'
         self.log_dir = base_dir / 'logs'
         self.downloads_dir = base_dir / 'downloads'
