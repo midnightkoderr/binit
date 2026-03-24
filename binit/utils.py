@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import IO, Any, Optional
+from urllib.parse import urlparse
 
 from ruamel.yaml import YAML
 
@@ -68,3 +69,13 @@ def os_arch_detect(os_name: str, arch: str, arch_aliases: dict[str, set[str]]) -
     return os_name, canonical_arch
 
 
+def parse_github_repo(value: str) -> tuple[str, str]:
+    if value.startswith('http'):
+        parts = urlparse(value).path.strip('/').split('/')
+    else:
+        parts = value.strip('/').split('/')
+
+    if len(parts) < 2:
+        raise ValueError(f'Invalid GitHub repo: {value!r}. Expected owner/repo or full URL.')
+
+    return parts[0], parts[1]
