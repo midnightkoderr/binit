@@ -7,8 +7,7 @@ from pathlib import Path
 def setup_console_logging(level: str = 'INFO'):
     logging.basicConfig(
         level=level,
-        format='[%(asctime)s] [%(levelname)s] %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
+        format='[%(levelname)s] %(name)s: %(message)s',
         stream=sys.stderr
     )
 
