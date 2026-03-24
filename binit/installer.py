@@ -26,7 +26,7 @@ class Installer:
         self.api = GhApi()
         self._rename_to = rename_to
 
-    def run(self) -> ToolModel:
+    def run(self) -> ToolModel | None:
         config = load_config()
 
         os_name = config['os']
@@ -35,9 +35,17 @@ class Installer:
         downloads_dir = Path(config['base_dir']) / 'downloads'
         bin_dir = Path(config['base_dir']) / 'bin'
 
+        existing_tool = config.get('installed_tools', {}).get(self.repo)
+        if self._rename_to is None and existing_tool and existing_tool.get('rename_to'):
+            self._rename_to = existing_tool['rename_to']
+
         logger.info(f'Fetching latest release for {self.owner}/{self.repo}')
         release = self.api.repos.get_latest_release(owner=self.owner, repo=self.repo)
         repo_info = self.api.repos.get(owner=self.owner, repo=self.repo)
+
+        if existing_tool and existing_tool.get('release') == release.tag_name:
+            logger.info(f'{self.repo} {release.tag_name} is already installed, skipping.')
+            return None
 
         asset = self._match_asset(release.assets, os_name, arch_aliases)
         if not asset:
