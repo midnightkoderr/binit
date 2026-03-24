@@ -1,9 +1,11 @@
 import click
+from ghapi.all import GhApi
 from rich.console import Console
 from rich.table import Table
 
 from binit.core.config import load_config
 from binit.installer import Installer
+from binit.utils import parse_github_repo
 
 console = Console()
 
@@ -45,3 +47,35 @@ def install(github_repo: str):
         Installer(github_repo).run()
     except ValueError as e:
         raise click.BadParameter(str(e), param_hint='--github-repo')
+
+
+@tool.command(name='update')
+@click.option('--name', '-n', required=True, help='Name of the installed tool to update')
+def update(name: str):
+    '''Check for and apply updates to an installed tool'''
+    try:
+        cfg = load_config()
+    except FileNotFoundError as e:
+        raise click.ClickException(str(e))
+
+    tools = cfg.get('installed_tools', {})
+    if name not in tools:
+        raise click.ClickException(f'Tool "{name}" is not installed.')
+
+    tool_cfg = tools[name]
+    installed_release = tool_cfg.get('release')
+    repo_url = tool_cfg.get('repo')
+
+    owner, repo = parse_github_repo(repo_url)
+    latest = GhApi().repos.get_latest_release(owner=owner, repo=repo)
+    latest_release = latest.tag_name
+
+    if latest_release == installed_release:
+        click.echo(f'{name} is already up to date ({installed_release}).')
+        return
+
+    click.echo(f'Updating {name}: {installed_release} → {latest_release}')
+    try:
+        Installer(repo_url).run()
+    except ValueError as e:
+        raise click.ClickException(str(e))
