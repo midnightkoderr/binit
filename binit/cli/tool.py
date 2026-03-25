@@ -44,10 +44,11 @@ def tool():
 
 @tool.command(name='install')
 @click.option('--github-repo', '-r', required=True, help='GitHub repo as owner/repo or full URL')
-def install(github_repo: str):
+@click.option('--name', '-n', default=None, help='Name of the binary to install (for repos with multiple binaries)')
+def install(github_repo: str, name: str):
     '''Install a binary from the latest GitHub release'''
     try:
-        Installer(github_repo).run()
+        Installer(github_repo, name=name).run()
     except ValueError as e:
         raise click.BadParameter(str(e), param_hint='--github-repo')
 

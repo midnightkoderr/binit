@@ -36,13 +36,18 @@ def extract(archive: Path, _depth: int = 0, _max_depth: int = 3) -> Path:
     return extracted
 
 
-def find_executable(directory: Path) -> Path | None:
-    for f in directory.rglob('*'):
-        if f.is_file() and identify_filetype(f) == FileKind.BINARY:
-            logger.info(f'Found executable: {f}')
-            return f
-    logger.info(f'No executable found in {directory}')
-    return None
+def find_executable(directory: Path, preferred_name: str | None = None) -> Path | None:
+    executables = [f for f in directory.rglob('*') if f.is_file() and identify_filetype(f) == FileKind.BINARY]
+    if not executables:
+        logger.info(f'No executable found in {directory}')
+        return None
+    if preferred_name:
+        match = next((f for f in executables if f.name == preferred_name), None)
+        if match:
+            logger.info(f'Found executable: {match}')
+            return match
+    logger.info(f'Found executable: {executables[0]}')
+    return executables[0]
 
 
 def _extract_tar(archive: Path, dest: Path) -> Path:
