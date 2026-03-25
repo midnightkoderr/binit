@@ -23,10 +23,12 @@ class TestInitialiser:
         assert (base / 'downloads').is_dir()
         assert (base / 'logs').is_dir()
 
+
     def test_creates_config_file(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
         initialiser.run()
         assert (base / 'config.yaml').is_file()
+
 
     def test_config_fields(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
@@ -39,6 +41,7 @@ class TestInitialiser:
         assert config['base_dir'] == str(base)
         assert config['installed_tools'] == {}
 
+
     def test_skips_config_if_exists(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
         initialiser.run()
@@ -46,6 +49,7 @@ class TestInitialiser:
         original_mtime = config_file.stat().st_mtime
         make_initialiser(tmp_path)[0].run()
         assert config_file.stat().st_mtime == original_mtime
+
 
     def test_reinit_deletes_and_recreates(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
@@ -57,6 +61,7 @@ class TestInitialiser:
         assert base.is_dir()
         assert (base / 'config.yaml').is_file()
 
+
     def test_reinit_overwrites_config(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
         initialiser.run()
@@ -64,6 +69,7 @@ class TestInitialiser:
         original_inode = config_file.stat().st_ino
         make_initialiser(tmp_path, reinit=True)[0].run()
         assert config_file.stat().st_ino != original_inode
+
 
     def test_skips_existing_dirs_without_reinit(self, tmp_path):
         initialiser, base = make_initialiser(tmp_path)
@@ -83,6 +89,7 @@ class TestInitCommand:
             result = runner.invoke(init)
         assert result.exit_code == 0
         mock.assert_called_once_with(reinit=False)
+
 
     def test_reinit_flag_passed(self, tmp_path):
         runner = CliRunner()

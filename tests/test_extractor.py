@@ -38,10 +38,12 @@ class TestExtract:
         extract(archive)
         assert (tmp_path / 'hello.txt').exists()
 
+
     def test_zip_extracted(self, tmp_path):
         archive = make_zip(tmp_path, {'hello.txt': b'hello'})
         extract(archive)
         assert (tmp_path / 'hello.txt').exists()
+
 
     def test_binary_skipped(self, tmp_path):
         binary = tmp_path / 'mybinary'
@@ -49,16 +51,19 @@ class TestExtract:
         result = extract(binary)
         assert result == binary
 
+
     def test_unknown_file_skipped(self, tmp_path):
         f = tmp_path / 'data.bin'
         f.write_bytes(b'\x00\x01\x02\x03')
         result = extract(f)
         assert result == f
 
+
     def test_max_depth_stops_recursion(self, tmp_path):
         archive = make_tar_gz(tmp_path, {'inner.txt': b'data'})
         result = extract(archive, _depth=3, _max_depth=3)
         assert result == archive
+
 
     def test_original_archive_not_re_extracted(self, tmp_path):
         archive = make_tar_gz(tmp_path, {'file.txt': b'content'})
@@ -67,6 +72,7 @@ class TestExtract:
             # original archive must not be passed as a nested call
             nested_calls = [c.args[0] for c in mock_extract.call_args_list[1:]]
             assert archive not in nested_calls
+
 
     def test_nested_archive_recursed(self, tmp_path):
         # inner archive is a direct child after outer extraction
@@ -95,10 +101,12 @@ class TestFindExecutable:
         result = find_executable(tmp_path)
         assert result == binary
 
+
     def test_returns_none_when_no_binary(self, tmp_path):
         (tmp_path / 'readme.txt').write_text('hello')
         result = find_executable(tmp_path)
         assert result is None
+
 
     def test_finds_binary_in_subdirectory(self, tmp_path):
         subdir = tmp_path / 'sub'
@@ -108,7 +116,22 @@ class TestFindExecutable:
         result = find_executable(tmp_path)
         assert result == binary
 
+
     def test_ignores_non_binary_files(self, tmp_path):
         (tmp_path / 'data.bin').write_bytes(b'\x00\x01\x02')
         result = find_executable(tmp_path)
         assert result is None
+
+
+    def test_preferred_name_selects_correct_binary(self, tmp_path):
+        (tmp_path / 'kubectx').write_bytes(ELF_MAGIC)
+        (tmp_path / 'kubens').write_bytes(ELF_MAGIC)
+        result = find_executable(tmp_path, preferred_name='kubens')
+        assert result.name == 'kubens'
+
+
+    def test_preferred_name_falls_back_to_first_when_not_found(self, tmp_path):
+        binary = tmp_path / 'kubectx'
+        binary.write_bytes(ELF_MAGIC)
+        result = find_executable(tmp_path, preferred_name='kubens')
+        assert result == binary
