@@ -44,6 +44,19 @@ To reinitialise from scratch:
 binit init --reinit
 ```
 
+## Shell Completion
+
+```bash
+# bash — add to ~/.bashrc
+eval "$(binit completion bash)"
+
+# zsh — add to ~/.zshrc
+eval "$(binit completion zsh)"
+
+# fish — add to ~/.config/fish/config.fish
+binit completion fish | source
+```
+
 ## Commands
 
 ### `binit tool install`
@@ -55,11 +68,18 @@ binit tool install -r <owner/repo>
 binit tool install -r <https://github.com/owner/repo>
 ```
 
+For repos that ship multiple binaries, use `--name`/`-n` to pick one:
+
+```bash
+binit tool install -r <owner/repo> -n <binary>
+```
+
 **Examples:**
 
 ```bash
 binit tool install -r anchore/grant
-binit tool install -r cli/cli
+binit tool install -r ahmetb/kubectx           # installs kubectx
+binit tool install -r ahmetb/kubectx -n kubens # installs kubens
 ```
 
 binit automatically matches the correct release asset for your OS and architecture, extracts the archive, and places the binary in `~/.binit/bin/`.
@@ -85,6 +105,17 @@ binit tool update -a
 ```bash
 binit tool update -n gitleaks
 binit tool update --all
+```
+
+---
+
+### `binit tool uninstall`
+
+Remove an installed tool and delete its binary.
+
+```bash
+binit tool uninstall --name <tool>
+binit tool uninstall -n <tool>
 ```
 
 ---
