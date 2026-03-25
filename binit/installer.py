@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+import warnings
 
 import shutil
 
@@ -23,7 +24,11 @@ class Installer:
 
     def __init__(self, github_repo: str, rename_to: str | None = None, name: str | None = None):
         self.owner, self.repo = parse_github_repo(github_repo)
-        self.api = GhApi()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            self.api = GhApi()
+
         self._rename_to = rename_to
         self._name = name
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 import click
 from ghapi.all import GhApi
@@ -36,8 +37,7 @@ def _list_installed_callback(ctx: click.Context, _, value):
 
 
 @click.group(name='tool')
-@click.option('--list-installed', is_flag=True, is_eager=True, expose_value=False,
-               callback=_list_installed_callback, help='List all installed tools')
+@click.option('--list-installed', is_flag=True, is_eager=True, expose_value=False, callback=_list_installed_callback, help='List all installed tools')
 def tool():
     '''Manage installed tools'''
 
@@ -58,7 +58,12 @@ def _update_tool(name: str, tool_cfg: dict):
     repo_url = tool_cfg.get('repo')
 
     owner, repo = parse_github_repo(repo_url)
-    latest = GhApi().repos.get_latest_release(owner=owner, repo=repo)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)
+        api = GhApi()
+
+    latest = api.repos.get_latest_release(owner=owner, repo=repo)
     latest_release = latest.tag_name
 
     if latest_release == installed_release:
