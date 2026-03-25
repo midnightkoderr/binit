@@ -25,6 +25,7 @@ class Initialiser:
         self.log_dir = base_dir / 'logs'
         self.downloads_dir = base_dir / 'downloads'
 
+
     def run(self):
         if self.reinit and self.base_dir.exists():
             logger.info(f'Reinitialising: deleting {self.base_dir} recursively')
@@ -32,6 +33,7 @@ class Initialiser:
         self.create_dirs()
         self._write_config()
         self._print_path_hint()
+
 
     def _print_path_hint(self):
         bin_dir = self.bin_dir
@@ -45,6 +47,7 @@ class Initialiser:
         click.echo('  To persist it, add the line above to your shell config (~/.bashrc, ~/.zshrc, etc.)')
         click.echo('')
 
+
     def create_dirs(self):
         for d in [self.config_dir, self.base_dir, self.bin_dir, self.log_dir, self.downloads_dir]:
             if not d.exists():
@@ -53,16 +56,13 @@ class Initialiser:
             else:
                 logger.info(f'Dir already exists: {d}')
 
+
     def _write_config(self):
         if self.config_file.exists() and not self.reinit:
             logger.info(f'Config already exists: {self.config_file}')
             return
 
-        os_name, arch = os_arch_detect(
-            platform.system().lower(),
-            platform.machine().lower(),
-            ARCH_ALIASES
-        )
+        os_name, arch = os_arch_detect(platform.system().lower(), platform.machine().lower(), ARCH_ALIASES)
 
         config = {
             'binit_version': VERSION,

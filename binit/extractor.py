@@ -41,11 +41,13 @@ def find_executable(directory: Path, preferred_name: str | None = None) -> Path 
     if not executables:
         logger.info(f'No executable found in {directory}')
         return None
+
     if preferred_name:
         match = next((f for f in executables if f.name == preferred_name), None)
         if match:
             logger.info(f'Found executable: {match}')
             return match
+
     logger.info(f'Found executable: {executables[0]}')
     return executables[0]
 
@@ -53,6 +55,7 @@ def find_executable(directory: Path, preferred_name: str | None = None) -> Path 
 def _extract_tar(archive: Path, dest: Path) -> Path:
     with tarfile.open(archive, 'r:*') as tar:
         tar.extractall(dest, filter='data')
+
     logger.info(f'Extracted {archive.name} to {dest}')
     return dest
 
@@ -60,5 +63,6 @@ def _extract_tar(archive: Path, dest: Path) -> Path:
 def _extract_zip(archive: Path, dest: Path) -> Path:
     with zipfile.ZipFile(archive, 'r') as zf:
         zf.extractall(dest)
+
     logger.info(f'Extracted {archive.name} to {dest}')
     return dest

@@ -17,11 +17,14 @@ console = Console()
 def _list_installed_callback(ctx: click.Context, _, value):
     if not value or ctx.resilient_parsing:
         return
+
     try:
         cfg = load_config()
     except FileNotFoundError as e:
         raise click.ClickException(str(e))
+
     tools = cfg.get('installed_tools', {})
+
     if not tools:
         click.echo('No tools installed.')
     else:
@@ -30,6 +33,7 @@ def _list_installed_callback(ctx: click.Context, _, value):
         table.add_column('Version')
         table.add_column('Release')
         table.add_column('Binary')
+
         for name, t in tools.items():
             table.add_row(name, t.get('version', '-'), t.get('release', '-'), t.get('binary', '-'))
         console.print(table)
@@ -93,6 +97,7 @@ def update(name: str, update_all: bool):
         if not tools:
             click.echo('No tools installed.')
             return
+
         for tool_name, tool_cfg in tools.items():
             try:
                 _update_tool(tool_name, tool_cfg)
@@ -123,10 +128,8 @@ def uninstall(name: str):
         raise click.ClickException(f'Tool "{name}" is not installed.')
 
     binary = tools[name].get('binary')
-    if binary:
-        binary_path = Path(binary)
-        if binary_path.exists():
-            binary_path.unlink()
+    if binary and (p := Path(binary)).exists():
+        p.unlink()
 
     del tools[name]
     write_config(cfg, DEFAULT_BASE_DIR / 'config.yaml')

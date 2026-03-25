@@ -58,11 +58,13 @@ class YamlHandler:
         self.yaml_loader = yaml_loader
         self.yaml_writer = yaml_writer
 
+
     def load(self, stream: IO[str]) -> Optional[dict]:
         try:
             return self.yaml_loader.load(stream)
         except Exception as e:
             raise YamlError(f'Invalid YAML format in file: {stream}') from e
+
 
     def dump(self, data: Any, stream: IO[str]) -> None:
         try:
@@ -75,14 +77,17 @@ class ConfigManager:
     def __init__(self, yaml_handler: YamlHandler):
         self.yaml_handler = yaml_handler
 
+
     def config_exists(self, path: Path) -> bool:
         return path.exists()
+
 
     def load_config(self, path: Path) -> dict:
         if not self.config_exists(path):
             return {}
         with path.open(encoding='utf-8') as f:
             return self.yaml_handler.load(f) or {}
+
 
     def write_config(self, data: Any, path: Path) -> None:
         with path.open('w', encoding='utf-8') as f:
