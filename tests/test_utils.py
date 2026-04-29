@@ -10,7 +10,7 @@ from binit.utils import ConfigManager, make_yaml_handler, os_arch_detect
 ARCH_ALIASES = {
     'amd64': {'amd64', 'x86_64', 'x86-64'},
     'arm64': {'arm64', 'aarch64'},
-    'armv7': {'armv7', 'armhf'},
+    'armv7': {'armv7', 'armhf'}
 }
 
 

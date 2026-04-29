@@ -1,12 +1,13 @@
 import platform
 import shutil
 from datetime import datetime, timezone
+from importlib.metadata import version
 from pathlib import Path
 
 import click
 
 from binit.core.config import write_config
-from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR, VERSION
+from binit.core.constants import ARCH_ALIASES, DEFAULT_BASE_DIR
 from binit.logger import get_logger
 from binit.utils import os_arch_detect
 
@@ -65,7 +66,7 @@ class Initialiser:
         os_name, arch = os_arch_detect(platform.system().lower(), platform.machine().lower(), ARCH_ALIASES)
 
         config = {
-            'binit_version': VERSION,
+            'binit_version': version('binit'),
             'os': os_name,
             'arch': arch,
             'init_at': datetime.now(timezone.utc).astimezone().isoformat(),
