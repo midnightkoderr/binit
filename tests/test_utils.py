@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from binit.core.exceptions import YamlError
-from binit.utils import ConfigManager, YamlHandler, make_yaml_handler, os_arch_detect
+from binit.utils import ConfigManager, make_yaml_handler, os_arch_detect
 
 
 ARCH_ALIASES = {
