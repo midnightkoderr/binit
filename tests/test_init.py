@@ -83,8 +83,7 @@ class TestInitCommand:
     def test_init_runs_successfully(self, tmp_path):
         base = tmp_path / 'binit'
         runner = CliRunner()
-        with patch('binit.initialiser.DEFAULT_BASE_DIR', base), \
-             patch('binit.cli.init.Initialiser') as mock:
+        with patch('binit.initialiser.DEFAULT_BASE_DIR', base), patch('binit.cli.init.Initialiser') as mock:
             mock.return_value.run.return_value = None
             result = runner.invoke(init)
         assert result.exit_code == 0

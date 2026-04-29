@@ -82,9 +82,7 @@ class TestToolUpdate:
         runner = CliRunner()
         latest = MagicMock()
         latest.tag_name = 'v0.6.4'
-        with patch('binit.cli.tool.load_config', return_value={'installed_tools': INSTALLED_TOOLS}), \
-             patch('binit.cli.tool.GhApi') as mock_api, \
-             patch('binit.cli.tool.parse_github_repo', return_value=('anchore', 'grant')):
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': INSTALLED_TOOLS}), patch('binit.cli.tool.GhApi') as mock_api, patch('binit.cli.tool.parse_github_repo', return_value=('anchore', 'grant')):
             mock_api.return_value.repos.get_latest_release.return_value = latest
             result = runner.invoke(tool, ['update', '-n', 'grant'])
         assert result.exit_code == 0
@@ -95,10 +93,7 @@ class TestToolUpdate:
         runner = CliRunner()
         latest = MagicMock()
         latest.tag_name = 'v0.7.0'
-        with patch('binit.cli.tool.load_config', return_value={'installed_tools': INSTALLED_TOOLS}), \
-             patch('binit.cli.tool.GhApi') as mock_api, \
-             patch('binit.cli.tool.parse_github_repo', return_value=('anchore', 'grant')), \
-             patch('binit.cli.tool.Installer') as mock_installer:
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': INSTALLED_TOOLS}), patch('binit.cli.tool.GhApi') as mock_api, patch('binit.cli.tool.parse_github_repo', return_value=('anchore', 'grant')), patch('binit.cli.tool.Installer') as mock_installer:
             mock_api.return_value.repos.get_latest_release.return_value = latest
             mock_installer.return_value.run.return_value = MagicMock()
             result = runner.invoke(tool, ['update', '-n', 'grant'])
@@ -138,10 +133,7 @@ class TestToolUpdate:
         }
         latest = MagicMock()
         latest.tag_name = 'v99.0.0'
-        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), \
-             patch('binit.cli.tool.GhApi') as mock_api, \
-             patch('binit.cli.tool.parse_github_repo', side_effect=lambda u: ('owner', u.split('/')[-1])), \
-             patch('binit.cli.tool.Installer') as mock_installer:
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), patch('binit.cli.tool.GhApi') as mock_api, patch('binit.cli.tool.parse_github_repo', side_effect=lambda u: ('owner', u.split('/')[-1])), patch('binit.cli.tool.Installer') as mock_installer:
             mock_api.return_value.repos.get_latest_release.return_value = latest
             mock_installer.return_value.run.return_value = MagicMock()
             result = runner.invoke(tool, ['update', '--all'])
@@ -164,8 +156,7 @@ class TestToolUninstall:
             'grant': {**INSTALLED_TOOLS['grant'], 'binary': str(binary)},
         }
         runner = CliRunner()
-        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), \
-             patch('binit.cli.tool.write_config') as mock_write:
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), patch('binit.cli.tool.write_config') as mock_write:
             result = runner.invoke(tool, ['uninstall', '-n', 'grant'])
         assert result.exit_code == 0
         assert 'Uninstalled grant' in result.output
@@ -194,8 +185,7 @@ class TestToolUninstall:
             'grant': {**INSTALLED_TOOLS['grant'], 'binary': '/nonexistent/grant'},
         }
         runner = CliRunner()
-        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), \
-             patch('binit.cli.tool.write_config'):
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), patch('binit.cli.tool.write_config'):
             result = runner.invoke(tool, ['uninstall', '-n', 'grant'])
         assert result.exit_code == 0
         assert 'Uninstalled grant' in result.output
