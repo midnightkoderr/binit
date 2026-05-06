@@ -1,7 +1,7 @@
 import click
 from importlib.metadata import version
 
-from binit.cli import config, init, tool
+from binit.cli import cache, config, init, tool
 
 
 @click.group(invoke_without_command=True)
@@ -16,3 +16,4 @@ def cli(ctx: click.Context):
 cli.add_command(init.init)
 cli.add_command(config.config)
 cli.add_command(tool.tool)
+cli.add_command(cache.cache)
