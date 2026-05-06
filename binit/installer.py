@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 import warnings
 
 import shutil
@@ -136,10 +137,12 @@ class Installer:
         score = 0
 
         if self._name:
-            if self._name.lower() not in name:
+            n = re.escape(self._name.lower())
+            if not re.match(rf'^{n}(?:_|-(?=\d))', name):
                 return -100
         else:
-            if self.repo.lower() in name:
+            n = re.escape(self.repo.lower())
+            if re.match(rf'^{n}(?:_|-(?=\d))', name):
                 score += 2
 
         if os_name in name:
