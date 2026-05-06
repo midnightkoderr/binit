@@ -132,3 +132,51 @@ class TestMatchAsset:
         self.installer._name = None
         asset = self._match(['hadolint-linux-x86_64'])
         assert asset is None  # no OS match either in this case, so filtered out
+
+
+class TestNameWordBoundary:
+    def setup_method(self):
+        self.installer = Installer.__new__(Installer)
+        self.installer.owner = 'openbao'
+        self.installer.repo = 'openbao'
+        self.installer._name = 'bao'
+
+
+    def _match(self, names, os_name='linux', arch_aliases=None):
+        if arch_aliases is None:
+            arch_aliases = {'amd64', 'x86_64', 'x64'}
+        assets = [make_asset(n) for n in names]
+        return self.installer._match_asset(assets, os_name, arch_aliases)
+
+
+    def test_name_picks_exact_over_compound(self):
+        asset = self._match([
+            'bao-hsm_2.5.3_linux_x86_64.tar.gz',
+            'bao_2.5.3_linux_x86_64.tar.gz',
+        ])
+        assert asset.name == 'bao_2.5.3_linux_x86_64.tar.gz'
+
+
+    def test_name_rejects_compound_hyphen_name(self):
+        asset = self._match(['bao-hsm_2.5.3_linux_x86_64.tar.gz'])
+        assert asset is None
+
+
+    def test_name_matches_hyphen_version_separator(self):
+        asset = self._match(['bao-2.5.3-linux-amd64.tar.gz'])
+        assert asset.name == 'bao-2.5.3-linux-amd64.tar.gz'
+
+
+    def test_name_rejects_compound_with_hyphen_version_separator(self):
+        asset = self._match(['bao-hsm-2.5.3-linux-amd64.tar.gz'])
+        assert asset is None
+
+
+    def test_repo_bonus_word_boundary_prefers_exact_name(self):
+        self.installer._name = None
+        self.installer.repo = 'grant'
+        asset = self._match([
+            'grant-extra_0.6.4_linux_amd64.tar.gz',
+            'grant_0.6.4_linux_amd64.tar.gz',
+        ])
+        assert asset.name == 'grant_0.6.4_linux_amd64.tar.gz'
