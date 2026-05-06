@@ -99,7 +99,7 @@ class Installer:
         binary_path.chmod(0o755)
         logger.info(f'Moved binary to {binary_path}')
 
-        version = release.tag_name.lstrip('v')
+        version = release.tag_name.split('/')[-1].lstrip('v')
         license_name = repo_info.license.name if repo_info.get('license') else None
 
         updated_at = datetime.fromisoformat(release.published_at.replace('Z', '+00:00'))
