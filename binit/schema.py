@@ -9,7 +9,7 @@ class ToolSchema(Schema):
     repo = fields.Url(required=True)
     asset = fields.Str(required=True)
     release = fields.Str(required=True)
-    version = fields.Str(required=True, validate=validate.Regexp(r'^\d+\.\d+\.\d+$', error='Version must be in X.Y.Z format'))
+    version = fields.Str(required=True, validate=validate.Regexp(r'^\d+(\.\d+)+$', error='Version must be numeric (e.g. 1.2.3)'))
     homepage = fields.Url(allow_none=True)
     updated_at = fields.DateTime(required=True)
     installed_at = fields.DateTime(allow_none=True)
