@@ -81,4 +81,3 @@ binit completion fish | source
 
 - [Usage guide](usage.md) — all commands with examples
 - [Configuration reference](configuration.md) — config file fields explained
-- [API reference](api.md) — internal Python modules
