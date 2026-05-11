@@ -1,10 +1,11 @@
 import click
 
+from binit.cli._command import Command
 from binit.core.config import load_config
 from binit.schema import ConfigSchema
 
 
-@click.command(name='config')
+@click.command(name='config', cls=Command)
 @click.option('--print', '-p', 'do_print', is_flag=True, default=False, help='Print current configuration')
 @click.option('--check', '-c', is_flag=True, default=False, help='Validate configuration against schema')
 @click.pass_context

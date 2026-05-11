@@ -3,10 +3,11 @@ from pathlib import Path
 
 import click
 
+from binit.cli._command import Command
 from binit.core.config import load_config
 
 
-@click.command(name='cache')
+@click.command(name='cache', cls=Command)
 @click.option('--clean', '-c', is_flag=True, help='Delete all cached downloaded archives')
 @click.option('--logs', '-l', is_flag=True, help='Delete all log files')
 def cache(clean: bool, logs: bool):

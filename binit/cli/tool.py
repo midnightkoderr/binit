@@ -6,6 +6,7 @@ from ghapi.all import GhApi
 from rich.console import Console
 from rich.table import Table
 
+from binit.cli._command import Command
 from binit.core.config import load_config, write_config
 from binit.core.constants import DEFAULT_BASE_DIR
 from binit.installer import Installer
@@ -46,7 +47,7 @@ def tool():
     '''Manage installed tools'''
 
 
-@tool.command(name='install')
+@tool.command(name='install', cls=Command)
 @click.option('--github-repo', '-r', required=True, help='GitHub repo as owner/repo or full URL')
 @click.option('--name', '-n', default=None, help='Name of the binary to install (for repos with multiple binaries)')
 def install(github_repo: str, name: str):
@@ -78,7 +79,7 @@ def _update_tool(name: str, tool_cfg: dict):
     Installer(repo_url, rename_to=tool_cfg.get('rename_to')).run()
 
 
-@tool.command(name='update')
+@tool.command(name='update', cls=Command)
 @click.option('--name', '-n', default=None, help='Name of the installed tool to update')
 @click.option('--all', '-a', 'update_all', is_flag=True, default=False, help='Update all installed tools')
 def update(name: str, update_all: bool):
@@ -114,7 +115,7 @@ def update(name: str, update_all: bool):
         raise click.ClickException(str(e))
 
 
-@tool.command(name='uninstall')
+@tool.command(name='uninstall', cls=Command)
 @click.option('--name', '-n', required=True, help='Name of the installed tool to uninstall')
 def uninstall(name: str):
     '''Uninstall an installed tool and remove its binary'''
