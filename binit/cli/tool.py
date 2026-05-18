@@ -76,7 +76,7 @@ def _update_tool(name: str, tool_cfg: dict):
         return
 
     click.echo(f'Updating {name}: {installed_release} → {latest_release}')
-    Installer(repo_url, rename_to=tool_cfg.get('rename_to')).run()
+    Installer(repo_url, rename_to=tool_cfg.get('rename_to'), name=tool_cfg.get('name')).run()
 
 
 @tool.command(name='update', cls=Command)
