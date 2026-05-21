@@ -127,34 +127,47 @@ class Installer:
 
         return tool_model
 
-    _ARCHIVE_EXTENSIONS = ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.zip')
+    _TAR_EXTENSIONS = ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz')
     _CHECKSUM_EXTENSIONS = ('.sha256', '.sha512', '.md5', '.sha1', '.sig', '.asc', '.pem', '.sbom', '.txt')
-    _MIN_SCORE = 6
+    _REJECTED_EXTENSIONS = ('.deb', '.rpm', '.pkg', '.msi', '.exe', '.apk')
+    _OS_NAMES = frozenset({'linux', 'darwin', 'windows', 'freebsd'})
+    _ARCH_STARTS = ('x86', 'x64', 'amd', 'arm', 'aarch', 'i386', 'i686', 'ppc', 's390')
+    _MIN_SCORE = 4
 
 
     def _score_asset(self, asset, os_name: str, arch_aliases: set) -> int:
         name = asset.name.lower()
-        score = 0
 
-        if self._name:
-            n = re.escape(self._name.lower())
-            if not re.match(rf'^{n}(?:_|-(?=\d))', name):
-                return -100
-        else:
-            n = re.escape(self.repo.lower())
-            if re.match(rf'^{n}(?:_|-(?=\d))', name):
-                score += 2
-
-        if os_name in name:
-            score += 4
-        if any(alias in name for alias in arch_aliases):
-            score += 3
-        if any(name.endswith(ext) for ext in self._ARCHIVE_EXTENSIONS):
-            score += 2
-        if not Path(asset.name).suffix:
-            score += 1
+        if os_name not in name:
+            return -100
+        if not any(alias in name for alias in arch_aliases):
+            return -100
+        if any(name.endswith(ext) for ext in self._REJECTED_EXTENSIONS):
+            return -100
         if any(name.endswith(ext) for ext in self._CHECKSUM_EXTENSIONS):
-            score -= 10
+            return -100
+
+        score = 0
+        n = re.escape((self._name or self.repo).lower())
+
+        if re.match(rf'^{n}(?:_|-(?=\d))', name):
+            score += 5
+        else:
+            m = re.match(rf'^{n}-([a-z0-9].+)', name)
+            if m:
+                rest = m.group(1)
+                if (rest[0].isdigit()
+                        or any(rest.startswith(os_n) for os_n in self._OS_NAMES)
+                        or any(rest.startswith(arch) for arch in self._ARCH_STARTS)):
+                    score += 3
+
+        if any(name.endswith(ext) for ext in self._TAR_EXTENSIONS):
+            score += 3
+        elif name.endswith('.zip'):
+            score += 2
+        elif not Path(asset.name).suffix:
+            score += 2
+
         return score
 
 
