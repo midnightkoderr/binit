@@ -2,8 +2,9 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
+from importlib.metadata import version
+
 from binit.cli.init import init
-from binit.core.constants import VERSION
 from binit.initialiser import Initialiser
 from binit.utils import ConfigManager, make_yaml_handler
 
@@ -34,7 +35,7 @@ class TestInitialiser:
         initialiser, base = make_initialiser(tmp_path)
         initialiser.run()
         config = ConfigManager(make_yaml_handler()).load_config(base / 'config.yaml')
-        assert config['binit_version'] == VERSION
+        assert config['binit_version'] == version('binit')
         assert config['os'] in {'linux', 'darwin', 'windows'}
         assert 'arch' in config
         assert 'init_at' in config

@@ -100,7 +100,23 @@ class TestToolUpdate:
         assert result.exit_code == 0
         assert 'v0.6.4' in result.output
         assert 'v0.7.0' in result.output
+        mock_installer.assert_called_once_with('https://github.com/anchore/grant', rename_to=None, name='grant')
         mock_installer.return_value.run.assert_called_once()
+
+
+    def test_update_passes_rename_to(self):
+        runner = CliRunner()
+        tools = {
+            'grant': {**INSTALLED_TOOLS['grant'], 'rename_to': 'gr'},
+        }
+        latest = MagicMock()
+        latest.tag_name = 'v0.7.0'
+        with patch('binit.cli.tool.load_config', return_value={'installed_tools': tools}), patch('binit.cli.tool.GhApi') as mock_api, patch('binit.cli.tool.parse_github_repo', return_value=('anchore', 'grant')), patch('binit.cli.tool.Installer') as mock_installer:
+            mock_api.return_value.repos.get_latest_release.return_value = latest
+            mock_installer.return_value.run.return_value = MagicMock()
+            result = runner.invoke(tool, ['update', '-n', 'grant'])
+        assert result.exit_code == 0
+        mock_installer.assert_called_once_with('https://github.com/anchore/grant', rename_to='gr', name='grant')
 
 
     def test_update_tool_not_installed(self):
