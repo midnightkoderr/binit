@@ -100,21 +100,36 @@ If the archive already exists in the downloads cache, binit asks whether to re-d
 
 **Asset matching**
 
-binit scores each release asset and selects the highest-scoring one that meets the minimum threshold. The scoring rules are:
+binit filters and scores each release asset, then selects the highest-scoring one above the minimum threshold.
+
+**Hard filters** — assets failing any of these are excluded entirely:
+
+| Condition | Effect |
+|-----------|--------|
+| OS name not in filename | Excluded |
+| No arch alias in filename | Excluded |
+| Package format (`.deb`, `.rpm`, `.pkg`, `.msi`, `.exe`, `.apk`) | Excluded |
+| Checksum or signature (`.sha256`, `.sig`, `.sbom`, `.txt`, etc.) | Excluded |
+
+**Scoring** — applied after filtering:
 
 | Condition | Score |
 |-----------|-------|
-| Filename starts with `<name>_` or `<name>-<digit>` | Required (−100 if missing when `--name` given) |
-| Filename contains OS name | +4 |
-| Filename contains an arch alias | +3 |
-| File is an archive (`.tar.gz`, `.zip`, etc.) | +2 |
-| Filename starts with repo name (bonus, no `--name`) | +2 |
-| File has no extension (likely a raw binary) | +1 |
-| File is a checksum/signature (`.sha256`, `.sig`, etc.) | −10 |
+| Filename starts with `<name>_` or `<name>-<digit>` (strict match) | +5 |
+| Filename starts with `<name>-<OS>` or `<name>-<arch>` (loose match) | +3 |
+| Archive format: `.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz` | +3 |
+| Archive format: `.zip` | +2 |
+| No file extension (raw binary) | +2 |
 
-A minimum score of 6 is required. If no asset meets the threshold, the install fails.
+A minimum score of **4** is required. Assets with no name match score at most 3 (from the archive bonus alone) and are excluded.
 
-When `--name` is given, binit requires the filename to start with `<name>_` or `<name>-<digit>` (word-boundary match) to avoid picking compound names — e.g. `-n bao` will not match `bao-hsm_2.5.3_linux_amd64.tar.gz`.
+**Name matching** works at two levels:
+
+- **Strict** (`<name>_` or `<name>-<digit>`): handles the common `tool_1.2.3_linux_amd64.tar.gz` and `tool-1.2.3-linux-amd64.tar.gz` patterns.
+- **Loose** (`<name>-<OS>` or `<name>-<arch>`): handles tools that embed OS/arch directly after the name, e.g. `hadolint-linux-x86_64` or `starship-x86_64-unknown-linux-gnu.tar.gz`.
+- **Compound names are rejected**: `-n bao` will not match `bao-hsm_2.5.3_linux_amd64.tar.gz` because `hsm` is neither an OS nor an arch prefix — it scores below the threshold.
+
+When a repo ships binaries under a different name than the repo itself (e.g. `bitnami-labs/sealed-secrets` ships `kubeseal`), pass `--name kubeseal` so binit matches the correct asset.
 
 ---
 
