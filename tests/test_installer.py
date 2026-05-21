@@ -127,11 +127,39 @@ class TestMatchAsset:
 
 
     def test_no_name_no_repo_bonus_for_unrelated(self):
-        # asset doesn't contain repo name — still matched if it scores high enough
+        # asset name doesn't start with repo name — scores below MIN_SCORE
         self.installer.repo = 'grant'
         self.installer._name = None
         asset = self._match(['hadolint-linux-x86_64'])
-        assert asset is None  # no OS match either in this case, so filtered out
+        assert asset is None
+
+
+    def test_loose_match_name_os_separator(self):
+        # name-OS separator (e.g. hadolint-linux-x86_64) should match when _name matches
+        self.installer.repo = 'hadolint'
+        self.installer._name = None
+        asset = self._match(['hadolint-linux-x86_64'])
+        assert asset is not None
+        assert asset.name == 'hadolint-linux-x86_64'
+
+
+    def test_loose_match_name_arch_separator(self):
+        # name-arch separator (e.g. starship-x86_64-unknown-linux-gnu.tar.gz)
+        self.installer.repo = 'starship'
+        self.installer._name = None
+        asset = self._match(['starship-x86_64-unknown-linux-gnu.tar.gz'])
+        assert asset is not None
+
+
+    def test_strict_beats_loose_match(self):
+        # strict match (name_*) scores higher than loose match (name-arch-*)
+        self.installer.repo = 'starship'
+        self.installer._name = None
+        asset = self._match([
+            'starship-x86_64-unknown-linux-gnu.tar.gz',
+            'starship_1.0_linux_x86_64.tar.gz',
+        ])
+        assert asset.name == 'starship_1.0_linux_x86_64.tar.gz'
 
 
 class TestNameWordBoundary:
