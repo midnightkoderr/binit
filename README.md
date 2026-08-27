@@ -9,7 +9,7 @@ Clone the repo and install with uv:
 ```bash
 git clone https://github.com/midnightkoderr/binit
 cd binit
-uv pip install -e .
+uv tool install -e .
 ```
 
 ## Setup
