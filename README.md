@@ -4,7 +4,11 @@ A minimal GitHub release binary installer and manager.
 
 ## Installation
 
-Clone the repo and install with uv:
+```bash
+uv tool install git+https://github.com/midnightkoderr/binit
+```
+
+Or use local clone of the repo and install with uv:
 
 ```bash
 git clone https://github.com/midnightkoderr/binit
